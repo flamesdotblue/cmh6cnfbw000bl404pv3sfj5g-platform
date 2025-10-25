@@ -4,7 +4,7 @@ function useAudioEngine(speed = 44) {
   const ctx = useMemo(() => new (window.AudioContext || window.webkitAudioContext)(), []);
 
   const now = () => ctx.currentTime;
-  const timeScale = 100 / Math.max(1, speed); // higher speed => shorter times (from previous step)
+  const timeScale = 100 / Math.max(1, speed);
   const d = (seconds) => seconds * timeScale;
 
   const playBassClick = () => {
@@ -143,7 +143,7 @@ function useAudioEngine(speed = 44) {
     noise.stop(t0 + seconds);
   };
 
-  // 10. Electronic Bass Heat (variation, chunkier transient + slight pitch bend)
+  // 10. Electronic Bass Heat
   const playElectronicBassHeat = () => {
     const t0 = now();
     const osc = ctx.createOscillator();
@@ -170,7 +170,7 @@ function useAudioEngine(speed = 44) {
     osc.stop(t0 + d(0.28));
   };
 
-  // 11. Sweep (rising filter sweep noise)
+  // 11. Sweep
   const playSweep = () => {
     const t0 = now();
     const seconds = d(0.9);
@@ -228,36 +228,24 @@ function PadButton({ label, onTrigger, active, onToggleAuto }) {
 }
 
 export default function SoundPad() {
-  const speed = 44; // user requested speed
+  const speed = 44; // DJ play speed
   const engine = useAudioEngine(speed);
-  const intervalMs = Math.round(60000 / engine.bpm); // treat speed as BPM for repeat
+  const intervalMs = Math.round(60000 / engine.bpm);
 
   const [activeMap, setActiveMap] = useState({});
   const timersRef = useRef({});
 
+  // DJ play state
+  const [djOn, setDjOn] = useState(false);
+  const djIndexRef = useRef(0);
+  const djTimerRef = useRef(null);
+
   useEffect(() => {
-    // Cleanup on unmount
     return () => {
       Object.values(timersRef.current).forEach((id) => clearInterval(id));
+      if (djTimerRef.current) clearInterval(djTimerRef.current);
     };
   }, []);
-
-  const toggleAuto = (key, fn) => {
-    setActiveMap((prev) => {
-      const nextActive = !prev[key];
-      // clear existing
-      if (timersRef.current[key]) {
-        clearInterval(timersRef.current[key]);
-        delete timersRef.current[key];
-      }
-      if (nextActive) {
-        // trigger immediately and then repeat
-        fn();
-        timersRef.current[key] = setInterval(fn, intervalMs);
-      }
-      return { ...prev, [key]: nextActive };
-    });
-  };
 
   const pads = [
     { key: '1', label: '1. Bass Click', fn: engine.playBassClick },
@@ -272,12 +260,61 @@ export default function SoundPad() {
     { key: '11', label: '11. Sweep', fn: engine.playSweep },
   ];
 
+  const toggleAuto = (key, fn) => {
+    setActiveMap((prev) => {
+      const nextActive = !prev[key];
+      if (timersRef.current[key]) {
+        clearInterval(timersRef.current[key]);
+        delete timersRef.current[key];
+      }
+      if (nextActive) {
+        fn();
+        timersRef.current[key] = setInterval(fn, intervalMs);
+      }
+      return { ...prev, [key]: nextActive };
+    });
+  };
+
+  const startDj = () => {
+    if (djTimerRef.current) clearInterval(djTimerRef.current);
+    djIndexRef.current = 0;
+    // immediate first trigger
+    const current = pads[djIndexRef.current % pads.length];
+    current.fn();
+    djIndexRef.current = (djIndexRef.current + 1) % pads.length;
+    djTimerRef.current = setInterval(() => {
+      const p = pads[djIndexRef.current % pads.length];
+      p.fn();
+      djIndexRef.current = (djIndexRef.current + 1) % pads.length;
+    }, intervalMs);
+  };
+
+  const stopDj = () => {
+    if (djTimerRef.current) clearInterval(djTimerRef.current);
+    djTimerRef.current = null;
+  };
+
+  useEffect(() => {
+    if (djOn) startDj();
+    else stopDj();
+    return () => stopDj();
+  }, [djOn, intervalMs]);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold">Sound Pad</h3>
-        <span className="text-sm text-white/80">Speed/BPM: {engine.bpm}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-white/80">DJ Speed/BPM: {engine.bpm}</span>
+          <button
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium border shadow ${djOn ? 'bg-emerald-400 text-emerald-950 border-emerald-300' : 'bg-white/10 text-white border-white/20 hover:bg-white/20'}`}
+            onClick={() => setDjOn((v) => !v)}
+          >
+            {djOn ? 'DJ Play: On' : 'DJ Play: Off'}
+          </button>
+        </div>
       </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {pads.map((p) => (
           <PadButton
@@ -289,8 +326,9 @@ export default function SoundPad() {
           />
         ))}
       </div>
+
       <p className="mt-3 text-sm text-white/70">
-        روی هر دکمه کلیک کنید تا صدا هم‌زمان پخش و حالت تکرار (Auto) روشن/خاموش شود. سرعت = {engine.bpm}
+        با کلیک روی هر دکمه، صدا پخش و حالت تکرار همان دکمه روشن/خاموش می‌شود. برای اجرای خودکارِ DJ روی همه دکمه‌ها، دکمه DJ Play را روشن کنید. سرعت = ۴۴
       </p>
     </div>
   );

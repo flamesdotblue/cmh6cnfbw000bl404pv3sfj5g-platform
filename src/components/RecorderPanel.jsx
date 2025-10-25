@@ -10,10 +10,9 @@ export default function RecorderPanel() {
   const processorRef = useRef(null);
   const sourceRef = useRef(null);
   const streamRef = useRef(null);
-  const pcmBuffersRef = useRef([]); // Int16 chunks
+  const pcmBuffersRef = useRef([]);
   const sampleRateRef = useRef(44100);
 
-  // Load lamejs (UMD) dynamically
   useEffect(() => {
     const existing = document.querySelector('script[data-lamejs]');
     if (existing) {
@@ -30,7 +29,6 @@ export default function RecorderPanel() {
     document.head.appendChild(s);
   }, []);
 
-  // Helpers
   const floatTo16BitPCM = (input) => {
     const output = new Int16Array(input.length);
     for (let i = 0; i < input.length; i++) {
@@ -92,7 +90,6 @@ export default function RecorderPanel() {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
     } catch {}
 
-    // Encode to MP3 using lamejs
     try {
       const lamejs = window.lamejs;
       if (!lamejs) throw new Error('Encoder not ready');
@@ -118,7 +115,7 @@ export default function RecorderPanel() {
   return (
     <div className="rounded-2xl bg-white/10 border border-white/20 p-4 backdrop-blur-sm">
       <h3 className="text-lg font-semibold mb-2">4. Voice Recorder</h3>
-      <p className="text-sm text-white/80 mb-4">Click Record to capture your voice. Click Stop to finish and download as MP3.</p>
+      <p className="text-sm text-white/80 mb-4">Record your voice, then download as MP3.</p>
       <div className="flex flex-wrap items-center gap-3">
         <button
           disabled={!isReady || isRecording}

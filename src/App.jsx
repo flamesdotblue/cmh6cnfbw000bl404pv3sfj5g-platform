@@ -18,7 +18,7 @@ export default function App() {
         <p className="mt-2 text-white/80">orchids</p>
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-8">
             <SoundPad />
           </div>
           <div className="lg:col-span-1">
