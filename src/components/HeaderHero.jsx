@@ -11,7 +11,7 @@ export default function HeaderHero() {
       <div className="relative z-10 h-full container mx-auto px-4 md:px-8 flex items-end pb-6 md:pb-10">
         <div>
           <h1 className="text-3xl md:text-5xl font-bold tracking-tight">vbordv</h1>
-          <p className="mt-2 text-white/80 max-w-xl">Colorful sound pad with instant FX and mic recorder. Play. Record. Download.</p>
+          <p className="mt-2 text-white/80 max-w-xl">پد صدا با رنگ‌های زیبا. کلیک کن، خودکار تکرار می‌شود مثل دی‌جی. ضبط کن و دانلود کن.</p>
         </div>
       </div>
     </section>
