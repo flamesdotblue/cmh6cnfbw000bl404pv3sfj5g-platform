@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 
 function useAudioEngine() {
   const ctx = useMemo(() => new (window.AudioContext || window.webkitAudioContext)(), []);
@@ -38,7 +38,6 @@ function useAudioEngine() {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     const dist = ctx.createWaveShaper();
-    // simple distortion curve
     const curve = new Float32Array(44100);
     for (let i = 0; i < curve.length; i++) {
       const x = (i / curve.length) * 2 - 1;
@@ -92,7 +91,6 @@ function useAudioEngine() {
 
   const playDrumFx = () => {
     const t0 = now();
-    // Snare-like: noise + highpass
     const bufferSize = 0.2 * ctx.sampleRate;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = noiseBuffer.getChannelData(0);
@@ -111,7 +109,6 @@ function useAudioEngine() {
   };
 
   const playDrum = () => {
-    // Tom/perc
     const t0 = now();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -141,6 +138,23 @@ function useAudioEngine() {
     noise.stop(t0 + 0.35);
   };
 
+  const playClockTick = () => {
+    // Short bright tick (metronome-like)
+    const t0 = now();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1000;
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(2000, t0);
+    gain.gain.setValueAtTime(0.7, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+    osc.connect(filter).connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.06);
+  };
+
   return {
     playBassClick,
     playLaserFx,
@@ -150,6 +164,7 @@ function useAudioEngine() {
     playDrumFx,
     playDrum,
     playNoiseFx,
+    playClockTick,
   };
 }
 
@@ -166,6 +181,25 @@ function PadButton({ label, onTrigger }) {
 
 export default function SoundPad() {
   const engine = useAudioEngine();
+  const [clockAuto, setClockAuto] = useState(false);
+  const clockRef = useRef(null);
+
+  useEffect(() => {
+    if (clockAuto) {
+      // Start immediately and then repeat every 1s
+      engine.playClockTick();
+      clockRef.current = setInterval(() => engine.playClockTick(), 1000);
+    } else if (clockRef.current) {
+      clearInterval(clockRef.current);
+      clockRef.current = null;
+    }
+    return () => {
+      if (clockRef.current) {
+        clearInterval(clockRef.current);
+        clockRef.current = null;
+      }
+    };
+  }, [clockAuto]);
 
   const pads = [
     { label: '1. Bass Click', fn: engine.playBassClick },
@@ -176,6 +210,7 @@ export default function SoundPad() {
     { label: '7. Drum FX', fn: engine.playDrumFx },
     { label: '8. Drum', fn: engine.playDrum },
     { label: '9. Noise FX', fn: engine.playNoiseFx },
+    { label: '10. Clock Tick', fn: engine.playClockTick },
   ];
 
   return (
@@ -185,8 +220,14 @@ export default function SoundPad() {
         {pads.map((p) => (
           <PadButton key={p.label} label={p.label} onTrigger={p.fn} />
         ))}
+        <button
+          className={`h-24 rounded-xl border shadow-lg transition flex items-center justify-center text-center font-medium ${clockAuto ? 'bg-emerald-400/90 text-emerald-950 border-emerald-300' : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'}`}
+          onClick={() => setClockAuto((v) => !v)}
+        >
+          {clockAuto ? 'Clock Auto: On' : 'Clock Auto: Off'}
+        </button>
       </div>
-      <p className="mt-3 text-sm text-white/70">Tap any pad to auto play the sound.</p>
+      <p className="mt-3 text-sm text-white/70">Tap any pad to auto play the sound. Use Clock Auto to toggle continuous ticking.</p>
     </div>
   );
 }
