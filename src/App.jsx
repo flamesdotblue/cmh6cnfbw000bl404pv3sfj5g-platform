@@ -1,28 +1,25 @@
-import { useState } from 'react'
+import React from 'react';
+import Hero from './components/Hero';
+import GoogleAuthCard from './components/GoogleAuthCard';
+import ImageShowcase from './components/ImageShowcase';
+import SoundLab from './components/SoundLab';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+export default function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Vibe Coding Platform
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Your AI-powered development environment
-        </p>
-        <div className="text-center">
-          <button
-            onClick={() => setCount(count + 1)}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Count is {count}
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900 via-blue-900 to-black text-white">
+      <Hero />
+      <main className="max-w-6xl mx-auto px-4 md:px-6">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 -mt-24">
+          <GoogleAuthCard />
+          <ImageShowcase />
+        </section>
+        <section className="mt-10 md:mt-16">
+          <SoundLab />
+        </section>
+      </main>
+      <footer className="mt-16 py-8 text-center text-sm text-white/60">
+        <span className="font-semibold text-white/80">jkon</span> · Crafted with React + Tailwind
+      </footer>
     </div>
-  )
+  );
 }
-
-export default App
